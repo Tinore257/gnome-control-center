@@ -3,30 +3,30 @@ name: Build gnome-control-center
 on: [push, workflow_dispatch]
 
 permissions:
-    contents: write
+  contents: write
 
 jobs:
-    build:
-        runs-on: ubuntu-24.04-arm # native arm64 runner (free for public repos)
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                submodules: recursive # subprojects/gvc is a git submodule
-            - name: Build packages in Droidian container
-              run: |
-                mkdir -p /tmp/results
-                docker run --rm 
-                    -v "$GITHUB_WORKSPACE":/build/sources -v /tmp/results:/build 
-                    -e DEBEMAIL="Your Name you@example.com" 
-                quay.io/droidian/build-essential:next-arm64 /bin/bash -euxc '
-                    apt-get update
-                    apt-get install -y --no-install-recommends devscripts equivs
-                    cd /build/sources
-                    mk-build-deps -i -r -t "apt-get -y --no-install-recommends" debian/control
-                    dch -l "+pdx206fix$(date +%Y%m%d%H%M)" -D next "sound: add missing headphone_group id"
-                    dpkg-buildpackage -us -uc -b
-                '
-            - uses: actions/upload-artifact@v4
-              with:
-                name: gnome-control-center-debs
-                path: /tmp/results/*.deb
+  build:
+    runs-on: ubuntu-24.04-arm          # native arm64 runner (free for public repos)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive        # subprojects/gvc is a git submodule
+      - name: Build packages in Droidian container
+        run: |
+          mkdir -p /tmp/results
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/build/sources -v /tmp/results:/build \
+            -e DEBEMAIL="Your Name <you@example.com>" \
+            quay.io/droidian/build-essential:next-arm64 /bin/bash -euxc '
+              apt-get update
+              apt-get install -y --no-install-recommends devscripts equivs
+              cd /build/sources
+              mk-build-deps -i -r -t "apt-get -y --no-install-recommends" debian/control
+              dch -l "+pdx206fix$(date +%Y%m%d%H%M)" -D next "sound: add missing headphone_group id"
+              dpkg-buildpackage -us -uc -b
+            '
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gnome-control-center-debs
+          path: /tmp/results/*.deb
